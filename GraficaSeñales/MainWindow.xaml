@@ -1,0 +1,45 @@
+﻿<Window x:Class="GraficaSeñales.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GraficaSeñales"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="400.334" Width="890.732">
+    <Grid Background="#FFE6D8D8" Margin="0,0,0,-4">
+        <Button x:Name="btnGraficar" Content="Graficar" HorizontalAlignment="Left" Margin="810,127,0,0" VerticalAlignment="Top" Width="63" Click="btnGraficar_Click"/>
+        <Label x:Name="label" Content="Tiempo inicial:" HorizontalAlignment="Left" Margin="10,102,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txtTiempoInicial" HorizontalAlignment="Left" Height="23" Margin="10,128,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="128" Text="0"/>
+        <Label x:Name="label1" Content="Tiempo final:" HorizontalAlignment="Left" Margin="153,102,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txtTiempoFinal" HorizontalAlignment="Left" Height="23" Margin="153,128,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Text="1"/>
+        <Label x:Name="lblFrecuenciaMuestreo" Content="Frecuencia de muestreo" HorizontalAlignment="Left" Margin="303,102,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txtFrecuenciaMuestreo" HorizontalAlignment="Left" Height="23" Margin="303,128,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="128" Text="1000"/>
+        <ScrollViewer x:Name="scrContenedorGrafica" HorizontalAlignment="Left" Height="151" Margin="47,214,0,0" VerticalAlignment="Top" Width="826" Background="White" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Visible">
+            <Grid>
+                <Polyline x:Name="plnLineaGrafica" Stroke="BlueViolet" StrokeThickness="1" />
+                <Polyline x:Name="plnEjeX" Stroke="Black" StrokeThickness="0.5" />
+                <Polyline x:Name="plnEjeY" Stroke="Black" StrokeThickness="0.5" />
+            </Grid>
+        </ScrollViewer>
+        <Label Content="Tipo de señal:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+        <ComboBox x:Name="cbTipoSeñal" HorizontalAlignment="Left" Margin="10,36,0,0" VerticalAlignment="Top" Width="128" SelectedIndex="0" SelectionChanged="ComboBox_SelectionChanged">
+            <ComboBoxItem>Senoidal</ComboBoxItem>
+            <ComboBoxItem>Rampa</ComboBoxItem>
+            <ComboBoxItem>Triangular</ComboBoxItem>
+            <ComboBoxItem>Rectangular</ComboBoxItem>
+        </ComboBox>
+        <Grid x:Name="grdConfiguracionSenoidal" HorizontalAlignment="Left" Height="57" Margin="10,58,0,0" VerticalAlignment="Top" Width="445">
+            <Label x:Name="lblAmplitud" Content="Amplitud:" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <TextBox x:Name="txtAmplitud" HorizontalAlignment="Left" Height="23" Margin="0,26,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="128" Text="1" />
+            <Label x:Name="lblFrecuencia" Content="Frecuencia:" HorizontalAlignment="Left" Margin="133,0,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.462,0.425"/>
+            <TextBox x:Name="txtFrecuencia" HorizontalAlignment="Left" Height="23" Margin="133,24,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="128" Text="12"/>
+            <Label x:Name="lblFase" Content="Fase:" HorizontalAlignment="Left" Margin="274,6,0,0" VerticalAlignment="Top"/>
+            <TextBox x:Name="txtFase" HorizontalAlignment="Left" Height="23" Margin="274,24,-60,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="128" Text="0"/>
+        </Grid>
+        <TextBlock x:Name="lblMaxY" HorizontalAlignment="Left" Margin="0,214,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="42" TextAlignment="Right"/>
+        <TextBlock x:Name="lblMinY" HorizontalAlignment="Left" Margin="0,339,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="42" TextAlignment="Right"/>
+        <Label x:Name="lblEscala" Content="Factor de Escala:" HorizontalAlignment="Left" Margin="10,156,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txtEscala" HorizontalAlignment="Left" Height="23" Margin="10,182,0,0" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="128"/>
+
+    </Grid>
+</Window>
