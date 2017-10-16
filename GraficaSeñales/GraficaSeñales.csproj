@@ -56,11 +56,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ConfiguracionSenoidal.xaml.cs">
+      <DependentUpon>ConfiguracionSenoidal.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Señal.cs" />
+    <Compile Include="SeñalPersonalizada.cs" />
     <Compile Include="SeñalRampa.cs" />
     <Compile Include="SeñalRectangular.cs" />
     <Compile Include="SeñalSenoidal.cs" />
     <Compile Include="SeñalTriangular.cs" />
+    <Page Include="ConfiguracionSenoidal.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
