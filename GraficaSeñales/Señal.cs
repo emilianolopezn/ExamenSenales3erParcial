@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Numerics;
 
 namespace GraficaSeñales
 {
@@ -115,6 +116,84 @@ namespace GraficaSeñales
             return null;
         }
 
+        public SeñalPersonalizada convolucionar(Señal operando)
+        {
+            //Inicializar resultado
+            SeñalPersonalizada resultado =
+                new SeñalPersonalizada();
+            resultado.TiempoInicial =
+                this.TiempoInicial + operando.TiempoInicial;
+            resultado.TiempoFinal =
+                this.TiempoFinal + operando.TiempoFinal;
+            resultado.FrecuenciaMuestreo =
+                this.FrecuenciaMuestreo;
+            resultado.señal = new PointCollection();
+            double tiempoTotal = 
+                resultado.TiempoFinal - resultado.TiempoInicial;
+            double numeroMuestras = 
+                tiempoTotal * resultado.FrecuenciaMuestreo;
+            double xActual = resultado.TiempoInicial;
+            for (int n = 0; n < numeroMuestras; n++)
+            {
+                double muestra = 0;
+                for (int k = 0; k < operando.señal.Count; k++)
+                {
+                    if ((n - k) >= 0 && (n - k) < operando.señal.Count)
+                    {
+                        muestra +=
+                        (this.señal[k].Y * operando.señal[n - k].Y) * //altura
+                        (1.0 / resultado.FrecuenciaMuestreo);         //base
+                    }
+                    
+                }
+                resultado.señal.Add(new Point(xActual, muestra));
+                xActual += 1.0 / resultado.FrecuenciaMuestreo;
+            }
+
+                return resultado;
+        }
+
+        public SeñalPersonalizada correlacionar(Señal operando)
+        {
+            //Inicializar resultado
+            SeñalPersonalizada resultado =
+                new SeñalPersonalizada();
+            //this es la A , operando es la B
+            resultado.TiempoInicial =
+                this.TiempoInicial - 
+                (operando.TiempoFinal - operando.TiempoInicial);
+            resultado.TiempoFinal =
+                this.TiempoFinal;
+            resultado.FrecuenciaMuestreo =
+                this.FrecuenciaMuestreo;
+            resultado.señal = new PointCollection();
+            double tiempoTotal =
+                resultado.TiempoFinal - resultado.TiempoInicial;
+            double numeroMuestras =
+                tiempoTotal * resultado.FrecuenciaMuestreo;
+            double xActual = resultado.TiempoInicial;
+            for (int n = 0; n < numeroMuestras; n++)
+            {
+                double muestra = 0;
+                for (int k = 0; k < operando.señal.Count; k++)
+                {
+                    if ( n >= 0 && n < this.señal.Count &&
+                        (n - k) >= 0 && (n - k) < operando.señal.Count)
+                    {
+                        muestra +=
+                        (this.señal[n].Y * operando.señal[n - k].Y) * //altura
+                        (1.0 / resultado.FrecuenciaMuestreo);         //base
+                    }
+
+                }
+                resultado.señal.Add(new Point(xActual, muestra));
+                xActual += 1.0 / resultado.FrecuenciaMuestreo;
+            }
+
+            return resultado;
+        }
+
+
         public SeñalPersonalizada multipllicar(Señal multiplicando)
         {
             if (this.TiempoInicial == multiplicando.TiempoInicial &&
@@ -139,6 +218,38 @@ namespace GraficaSeñales
                 return resultado;
             }
             return null;
+        }
+
+        public SeñalPersonalizada transformar()
+        {
+            SeñalPersonalizada resultado =
+                new SeñalPersonalizada();
+            resultado.señal = new PointCollection();
+
+            resultado.TiempoInicial = this.TiempoInicial;
+            resultado.TiempoFinal = this.TiempoFinal;
+            resultado.FrecuenciaMuestreo = this.FrecuenciaMuestreo;
+            double tiempoActual = this.TiempoInicial;
+            double intervaloMuestras = 1 / this.FrecuenciaMuestreo;
+
+            for(int k=0; k < this.señal.Count; k++)
+            {
+                Complex muestra = 0;
+                for (int n=0; n < this.señal.Count; n++)
+                {
+                    muestra +=
+                        this.señal[n].Y *
+                        Complex.Exp(-2 *
+                        Math.PI *
+                        Complex.ImaginaryOne *
+                        k * n / this.señal.Count);
+                }
+                resultado.señal.Add(
+                    new Point(tiempoActual, muestra.Magnitude));
+                tiempoActual += intervaloMuestras;
+            }
+
+            return resultado;
         }
     }
 }

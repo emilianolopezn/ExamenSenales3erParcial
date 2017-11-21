@@ -13,6 +13,12 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+using System.IO;
+using Microsoft.Win32;
+
+using NAudio.Wave;
+
+
 namespace GraficaSeñales
 {
     /// <summary>
@@ -29,10 +35,10 @@ namespace GraficaSeñales
         public MainWindow()
         {
             InitializeComponent();
-            grdConfiguracion.Children.Add(new ConfiguracionSenoidal());
-            grdConfiguracion_2.Children.Add(new ConfiguracionSenoidal());
+
         }
 
+        //Ahora es el analizar 
         private void btnGraficar_Click(object sender, RoutedEventArgs e)
         {
             resultado = null;
@@ -40,139 +46,50 @@ namespace GraficaSeñales
             plnLineaGrafica.Points.Clear();
             plnLineaGrafica2.Points.Clear();
 
-            double tiempoInicial =
-                Double.Parse(txtTiempoInicial.Text);
-            double tiempoFinal =
-                Double.Parse(txtTiempoFinal.Text);
-            double frecuenciaMuestreo =
-                Double.Parse(txtFrecuenciaMuestreo.Text);
+            
 
-            //Evaluar valor del combo box que representa 
-            //el tipo de señal
-            switch (cbTipoSeñal.SelectedIndex)
+            //Aquí se va a construir la señal
+            //(Leer el audio)
+            var ruta = txtAudio.Text;
+            AudioFileReader reader = new AudioFileReader(ruta);
+
+            double tiempoInicial = 0;
+            double tiempoFinal = reader.TotalTime.Milliseconds / 1000.0;
+            double frecuenciaMuestreo = reader.WaveFormat.SampleRate;
+
+            txtTiempoInicial.Text = tiempoInicial.ToString();
+            txtTiempoFinal.Text = tiempoFinal.ToString();
+            txtFrecuenciaMuestreo.Text = frecuenciaMuestreo.ToString();
+
+            double duracion =
+                tiempoFinal - tiempoInicial;
+
+            señal = new SeñalPersonalizada();
+            señal.señal = new PointCollection();
+            señal.TiempoInicial = tiempoInicial;
+            señal.TiempoFinal = tiempoFinal;
+            señal.FrecuenciaMuestreo = frecuenciaMuestreo;
+
+            var readBuffer = new float[reader.WaveFormat.Channels];
+            int muestrasLeidas = 1;
+            double intervaloMuestreo = 1 / frecuenciaMuestreo;
+            double tiempoActual = tiempoInicial;
+            do
             {
-                case 0:
-                    //Senoidal
-                    double amplitud =
-                        Double.Parse
-                        (((ConfiguracionSenoidal)grdConfiguracion.Children[0]).
-                        txtAmplitud.Text);
-                    double frecuencia =
-                        Double.Parse
-                        (((ConfiguracionSenoidal)grdConfiguracion.Children[0]).
-                        txtFrecuencia.Text);
-                    double fase =
-                        Double.Parse
-                        (((ConfiguracionSenoidal)grdConfiguracion.Children[0]).
-                        txtFase.Text);
-                    señal =
-                        new SeñalSenoidal(amplitud, fase, frecuencia,
-                            tiempoInicial, tiempoFinal, frecuenciaMuestreo);
-                    break;
-                case 1:
-                    //Rampa
-                    señal =
-                        new SeñalRampa(tiempoInicial, tiempoFinal,
-                        frecuenciaMuestreo);
-                    break;
-                case 2:
-                    //Triangular
-                    señal =
-                        new SeñalTriangular(tiempoInicial, tiempoFinal,
-                        frecuenciaMuestreo);
-                    break;
-                case 3:
-                    //Rectangular
-                    señal =
-                        new SeñalRectangular(tiempoInicial, tiempoFinal,
-                        frecuenciaMuestreo);
-                    break;
-                default:
-                    señal = null;
-                    break;
-            }
-            switch(cbTipoSeñal_2.SelectedIndex)
-            {
-                case 0:
-                    //Senoidal
-                    double amplitud =
-                        Double.Parse(
-                            ((ConfiguracionSenoidal)(grdConfiguracion_2.Children[0]))
-                            .txtAmplitud.Text);
-                    double fase =
-                        Double.Parse(
-                            ((ConfiguracionSenoidal)(grdConfiguracion_2.Children[0]))
-                            .txtFase.Text);
-                    double frecuencia =
-                        Double.Parse(
-                            ((ConfiguracionSenoidal)(grdConfiguracion_2.Children[0]))
-                            .txtFrecuencia.Text);
-                    señalDos =
-                        new SeñalSenoidal(amplitud, fase, frecuencia,
-                        tiempoInicial, tiempoFinal, frecuenciaMuestreo);
-                    break;
-                case 1:
-                    //Rampa
-                    señalDos =
-                        new SeñalRampa
-                        (tiempoInicial, tiempoFinal, frecuenciaMuestreo);
-                    break;
-                case 2:
-                    //Triangular
-                    señalDos =
-                        new SeñalTriangular
-                        (tiempoInicial, tiempoFinal, frecuenciaMuestreo);
-                    break;
-                case 3:
-                    //Rectangular
-                    señalDos =
-                        new SeñalRectangular
-                        (tiempoInicial, tiempoFinal, frecuenciaMuestreo);
-                    break;
-                default:
-                    señalDos = null;
-                    break;
-            }
-
-
-
-            if (señal != null)
-            {
-                //Aplicar operaciones
-                señal.escalar
-                    (Double.Parse(txtEscala.Text));
-                señal.desplazarEnTiempo(
-                    Double.Parse(txtDesplazamientoTiempo.Text));
-                señal.desplazarEnAmplitud(
-                    Double.Parse(txtDesplazamientoAmplitud.Text));
-
-                if (señalDos != null)
+                muestrasLeidas = 
+                    reader.Read(readBuffer, 0, reader.WaveFormat.Channels);
+                if (muestrasLeidas > 0)
                 {
-                    //Aplicar operaciones
-                    señalDos.
-                        escalar(Double.Parse(txtEscala_2.Text));
-                    señalDos.
-                        desplazarEnTiempo(Double.Parse(txtDesplazamientoTiempo_2.Text));
-                    señalDos.
-                        desplazarEnAmplitud(Double.Parse(txtDesplazamientoAmplitud_2.Text));
-                    //*********************Graficar***********
-                    obtenerAmplitudMaxima();
-                    plnLineaGrafica.Points =
-                        convertirSeñalAGrafica(señal.señal);
-                    plnLineaGrafica2.Points =
-                        convertirSeñalAGrafica(señalDos.señal);
-
-                    lblMaxY.Text = Math.Round(amplitudMaxima).ToString();
-                    lblMinY.Text = Math.Round(-amplitudMaxima).ToString();
- 
+                    double max = readBuffer.Take(muestrasLeidas).Max();
+                    señal.señal.Add(new Point(tiempoActual, max));
                 }
-                
-            }
+                tiempoActual += intervaloMuestreo;
+            } while (muestrasLeidas > 0);
 
-            
+            plnLineaGrafica.Points =
+                convertirSeñalAGrafica(señal.señal, duracion, tiempoInicial);
 
-            
-
+            //Graficar ejes
             plnEjeX.Points.Clear();
             plnEjeX.Points.Add(new Point(tiempoInicial, 0));
             plnEjeX.Points.Add(new Point(tiempoFinal, 0));
@@ -181,12 +98,14 @@ namespace GraficaSeñales
             plnEjeY.Points.Add(new Point(0, amplitudMaxima));
             plnEjeY.Points.Add(new Point(0, -amplitudMaxima));
 
-            var ejeX = convertirSeñalAGrafica(plnEjeX.Points);
-            var ejeY = convertirSeñalAGrafica(plnEjeY.Points);
+
+            var ejeX = convertirSeñalAGrafica(plnEjeX.Points,duracion, tiempoInicial);
+            var ejeY = convertirSeñalAGrafica(plnEjeY.Points,duracion, tiempoInicial);
             plnEjeX.Points = ejeX;
             plnEjeY.Points = ejeY;
-            plnEjeX1.Points = ejeX;
-            plnEjeY1.Points = ejeY;
+            
+            //plnEjeX1.Points = ejeX;
+            //plnEjeY1.Points = ejeY;
 
             grdEtiquetas.Children.Clear();
             for (int i = Convert.ToInt32(tiempoInicial); i <= tiempoFinal; i++)
@@ -194,14 +113,14 @@ namespace GraficaSeñales
                 var etiqueta = new TextBlock();
                 var posicion = new PointCollection();
                 posicion.Add(new Point(i, 0));
-                posicion = convertirSeñalAGrafica(posicion);
+                posicion = convertirSeñalAGrafica(posicion, duracion, tiempoInicial);
                 etiqueta.Text = i.ToString();
                 etiqueta.Margin = new Thickness(posicion[0].X, posicion[0].Y,0,0);
                 etiqueta.Opacity = 0.5;
                 grdEtiquetas.Children.Add(etiqueta);
             }
-      
 
+            transformar();
         }
 
         private void obtenerAmplitudMaxima() {
@@ -213,13 +132,13 @@ namespace GraficaSeñales
                     amplitudMaxima = Math.Abs(punto.Y);
                 }
             }
-            foreach (Point punto in señalDos.señal)
+            /*foreach (Point punto in señalDos.señal)
             {
                 if (Math.Abs(punto.Y) > amplitudMaxima)
                 {
                     amplitudMaxima = Math.Abs(punto.Y);
                 }
-            }
+            }*/
             if (resultado != null)
             {
                 foreach (Point punto in resultado.señal)
@@ -234,17 +153,18 @@ namespace GraficaSeñales
 
         }
 
-        private PointCollection convertirSeñalAGrafica(PointCollection puntosSeñal)
+        private PointCollection convertirSeñalAGrafica(PointCollection puntosSeñal, 
+            double duracion, double tiempoInicial)
         {
             PointCollection puntosGrafica = new PointCollection();
-            double duracion = Double.Parse(txtTiempoFinal.Text) - Double.Parse(txtTiempoInicial.Text);
+            
             double escalaX = scrContenedorGrafica.Width / duracion;
             double escalaY = (scrContenedorGrafica.Height - 20) / 2;
             
             foreach(Point muestra in puntosSeñal)
             {
                 puntosGrafica.Add
-                    (new Point(escalaX * (muestra.X - señal.TiempoInicial),
+                    (new Point(escalaX * (muestra.X - tiempoInicial),
                     -(muestra.Y / amplitudMaxima) * escalaY + escalaY));
                 
             }
@@ -252,65 +172,25 @@ namespace GraficaSeñales
             return puntosGrafica;
         }
 
-        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (grdConfiguracion != null)
-            {
-                grdConfiguracion.Children.Clear();
-                switch (cbTipoSeñal.SelectedIndex)
-                {
-                    case 0:
-                        //Senoidal
-                        grdConfiguracion.Children.Add(new ConfiguracionSenoidal());
-                        break;
-                    case 1:
-                        //Rampa
-                        break;
-                    case 2:
-                        //Triangular
-                        break;
-                    case 3:
-                        //Rectangular
-                        break;
-                }
-            }
-        }
+       
 
-        private void cbTipoSeñal_2_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (grdConfiguracion_2 != null)
-            {
-                grdConfiguracion_2.Children.Clear();
-                switch (cbTipoSeñal_2.SelectedIndex)
-                {
-                    case 0:
-                        //Senoidal
-                        grdConfiguracion_2.Children.Add(new ConfiguracionSenoidal());
-                        break;
-                    case 1:
-                        //Rampa
-                        break;
-                    case 2:
-                        //Triangular
-                        break;
-                    case 3:
-                        //Rectangular
-                        break;
-                }
-            }
-        }
 
-        private void btnSumar_Click(object sender, RoutedEventArgs e)
+        private void sumar()
         {
             if (señal != null && señalDos != null)
             {
+                double tiempoInicial =
+                    Double.Parse(txtTiempoInicial.Text);
+                double duracion =
+                    Double.Parse(txtTiempoFinal.Text) -
+                    Double.Parse(txtTiempoInicial.Text);
                 resultado = señal.sumar(señalDos);
                 if (resultado != null)
                 {
                     //Grafico
                     obtenerAmplitudMaxima();
                     plnLineaGraficaResultado.Points =
-                        convertirSeñalAGrafica(resultado.señal);
+                        convertirSeñalAGrafica(resultado.señal,duracion, tiempoInicial);
                     lblMaxY_Resultado.Text = Math.Round(amplitudMaxima).ToString();
                     lblMinY_Resultado.Text = Math.Round(-amplitudMaxima).ToString();
                     grdEtiquetas2.Children.Clear();
@@ -319,27 +199,34 @@ namespace GraficaSeñales
                         var etiqueta = new TextBlock();
                         var posicion = new PointCollection();
                         posicion.Add(new Point(i, 0));
-                        posicion = convertirSeñalAGrafica(posicion);
+                        posicion = convertirSeñalAGrafica(posicion,duracion, tiempoInicial);
                         etiqueta.Text = i.ToString();
                         etiqueta.Margin = new Thickness(posicion[0].X, posicion[0].Y, 0, 0);
                         etiqueta.Opacity = 0.5;
                         grdEtiquetas2.Children.Add(etiqueta);
                     }
+                    graficarEjesResultado(resultado.TiempoInicial,
+                        resultado.TiempoFinal);
                 }
             }
         }
 
-        private void btnMultiplicar_Click(object sender, RoutedEventArgs e)
+        private void multiplicar()
         {
             if (señal != null && señalDos != null)
             {
+                double tiempoInicial =
+                    Double.Parse(txtTiempoInicial.Text);
+                double duracion =
+                    Double.Parse(txtTiempoFinal.Text) -
+                    Double.Parse(txtTiempoInicial.Text);
                 resultado = señal.multipllicar(señalDos);
                 if (resultado != null)
                 {
                     //Grafico
                     obtenerAmplitudMaxima();
                     plnLineaGraficaResultado.Points =
-                        convertirSeñalAGrafica(resultado.señal);
+                        convertirSeñalAGrafica(resultado.señal, duracion, tiempoInicial);
                     lblMaxY_Resultado.Text = Math.Round(amplitudMaxima).ToString();
                     lblMinY_Resultado.Text = Math.Round(-amplitudMaxima).ToString();
                     grdEtiquetas2.Children.Clear();
@@ -348,13 +235,217 @@ namespace GraficaSeñales
                         var etiqueta = new TextBlock();
                         var posicion = new PointCollection();
                         posicion.Add(new Point(i, 0));
-                        posicion = convertirSeñalAGrafica(posicion);
+                        posicion = convertirSeñalAGrafica(posicion, duracion, tiempoInicial);
                         etiqueta.Text = i.ToString();
                         etiqueta.Margin = new Thickness(posicion[0].X, posicion[0].Y, 0, 0);
                         etiqueta.Opacity = 0.5;
                         grdEtiquetas2.Children.Add(etiqueta);
                     }
+                    graficarEjesResultado(resultado.TiempoInicial,
+                        resultado.TiempoFinal);
                 }
+            }
+        }
+
+        private void convolucionar()
+        {
+            if (señal != null && señalDos != null)
+            {
+                double tiempoInicial = 
+                    Double.Parse(txtTiempoInicial.Text);
+                double tiempoFinal =
+                    Double.Parse(txtTiempoFinal.Text);
+                double tiempoInicialConvolucion =
+                    tiempoInicial + tiempoInicial;
+                double tiempoFinalConvolucion =
+                    tiempoFinal + tiempoFinal;
+                double duracion =
+                     (tiempoFinal + tiempoFinal) -
+                     (tiempoInicial + tiempoInicial);
+                resultado = señal.convolucionar(señalDos);
+                if (resultado != null)
+                {
+                    //Grafico
+                    obtenerAmplitudMaxima();
+                    plnLineaGraficaResultado.Points =
+                        convertirSeñalAGrafica(resultado.señal,duracion, tiempoInicialConvolucion);
+                    lblMaxY_Resultado.Text = Math.Round(amplitudMaxima).ToString();
+                    lblMinY_Resultado.Text = Math.Round(-amplitudMaxima).ToString();
+
+                    grdEtiquetas2.Children.Clear();
+                    for (int i = Convert.ToInt32(tiempoInicialConvolucion); i <= tiempoFinalConvolucion; i++)
+                    {
+                        var etiqueta = new TextBlock();
+                        var posicion = new PointCollection();
+                        posicion.Add(new Point(i, 0));
+                        posicion = convertirSeñalAGrafica(posicion, duracion, tiempoInicialConvolucion);
+                        etiqueta.Text = i.ToString();
+                        etiqueta.Margin = new Thickness(posicion[0].X, posicion[0].Y, 0, 0);
+                        etiqueta.Opacity = 0.5;
+                        grdEtiquetas2.Children.Add(etiqueta);
+                    }
+                    graficarEjesResultado(resultado.TiempoInicial,
+                        resultado.TiempoFinal);
+                }
+            }
+        }
+
+        private void correlacionar() {
+            if (señal != null && señalDos != null) {
+                double tiempoInicial =
+                    Double.Parse(txtTiempoInicial.Text);
+                double tiempoFinal =
+                    Double.Parse(txtTiempoFinal.Text);
+
+                double duracion =
+                     tiempoFinal - tiempoInicial;
+
+                resultado = señal.correlacionar(señalDos);
+                if (resultado != null) {
+                    //Grafico
+                    obtenerAmplitudMaxima();
+                    plnLineaGraficaResultado.Points =
+                        convertirSeñalAGrafica(resultado.señal, duracion, tiempoInicial);
+                    lblMaxY_Resultado.Text = Math.Round(amplitudMaxima).ToString();
+                    lblMinY_Resultado.Text = Math.Round(-amplitudMaxima).ToString();
+
+                    grdEtiquetas2.Children.Clear();
+                    for (int i = Convert.ToInt32(tiempoInicial); i <= tiempoFinal; i++) {
+                        var etiqueta = new TextBlock();
+                        var posicion = new PointCollection();
+                        posicion.Add(new Point(i, 0));
+                        posicion = convertirSeñalAGrafica(posicion, duracion, tiempoInicial);
+                        etiqueta.Text = i.ToString();
+                        etiqueta.Margin = new Thickness(posicion[0].X, posicion[0].Y, 0, 0);
+                        etiqueta.Opacity = 0.5;
+                        grdEtiquetas2.Children.Add(etiqueta);
+                    }
+                    graficarEjesResultado(resultado.TiempoInicial,
+                        resultado.TiempoFinal);
+                }
+            }
+        }
+
+        private void transformar()
+        {
+            if (señal != null)
+            {
+                double tiempoInicial =
+                    Double.Parse(txtTiempoInicial.Text);
+                double tiempoFinal =
+                    Double.Parse(txtTiempoFinal.Text);
+                double frecuenciaMuestreo =
+                      Double.Parse(txtFrecuenciaMuestreo.Text);
+                double duracion =
+                     tiempoFinal - tiempoInicial;
+                resultado = señal.transformar();
+                if (resultado != null)
+                {
+                    int indiceValorMaximo = 0;
+                    double valorMaximo = 0.0;
+                    for (int n = 0; n < resultado.señal.Count / 2; n++)
+                    {
+                        if (resultado.señal[n].Y > valorMaximo)
+                        {
+                            valorMaximo = resultado.señal[n].Y;
+                            indiceValorMaximo = n;
+                        }
+                    }
+                    double frecuenciaFundamental =
+                        indiceValorMaximo * frecuenciaMuestreo /
+                        señal.señal.Count;
+                    
+                    
+                        lblFrecuenciaFundamental.Text =
+                            frecuenciaFundamental.ToString() + " Hz";
+                    
+                    if(frecuenciaFundamental> 261 && frecuenciaFundamental < 293)
+                    {
+                        lblFrecuenciaFundamental.Text = "Do";
+                    }
+                    else if(frecuenciaFundamental> 293 && frecuenciaFundamental < 329)
+                    {
+                        lblFrecuenciaFundamental.Text = "Re";
+                    }
+                    else if(frecuenciaFundamental >329 && frecuenciaFundamental < 349)
+                    {
+                        lblFrecuenciaFundamental.Text = "Mi";
+                    }
+                    else if(frecuenciaFundamental > 349 && frecuenciaFundamental < 392)
+                    {
+                        lblFrecuenciaFundamental.Text = "Fa";
+                    }
+                    else if(frecuenciaFundamental >392 && frecuenciaFundamental < 440)
+                    {
+                        lblFrecuenciaFundamental.Text = "Sol";
+                    }
+                    else if (frecuenciaFundamental > 440 && frecuenciaFundamental < 493)
+                    {
+                        lblFrecuenciaFundamental.Text = "La";
+                    }
+                    else if(frecuenciaFundamental >493 && frecuenciaFundamental < 523)
+                    {
+                        lblFrecuenciaFundamental.Text = "SI";
+                    }
+
+                }
+
+                if (resultado != null)
+                {
+                    //Grafico
+                    obtenerAmplitudMaxima();
+                    plnLineaGraficaResultado.Points =
+                        convertirSeñalAGrafica(resultado.señal, duracion, tiempoInicial);
+                    lblMaxY_Resultado.Text = Math.Round(amplitudMaxima).ToString();
+                    lblMinY_Resultado.Text = Math.Round(-amplitudMaxima).ToString();
+
+                    grdEtiquetas2.Children.Clear();
+                    for (int i = Convert.ToInt32(tiempoInicial); i <= tiempoFinal; i++)
+                    {
+                        var etiqueta = new TextBlock();
+                        var posicion = new PointCollection();
+                        posicion.Add(new Point(i, 0));
+                        posicion = convertirSeñalAGrafica(posicion, duracion, tiempoInicial);
+                        etiqueta.Text = i.ToString();
+                        etiqueta.Margin = new Thickness(posicion[0].X, posicion[0].Y, 0, 0);
+                        etiqueta.Opacity = 0.5;
+                        //grdEtiquetas2.Children.Add(etiqueta);
+                    }
+                    graficarEjesResultado(resultado.TiempoInicial,
+                        resultado.TiempoFinal);
+                }
+            }
+        }
+
+      
+
+        void graficarEjesResultado(double tiempoInicial,
+            double tiempoFinal)
+        {
+            double duracion = tiempoFinal - tiempoInicial;
+
+            //Graficar ejes
+            plnEjeX1.Points.Clear();
+            plnEjeX1.Points.Add(new Point(tiempoInicial, 0));
+            plnEjeX1.Points.Add(new Point(tiempoFinal, 0));
+
+            plnEjeY1.Points.Clear();
+            plnEjeY1.Points.Add(new Point(0, amplitudMaxima));
+            plnEjeY1.Points.Add(new Point(0, -amplitudMaxima));
+
+
+            var ejeX = convertirSeñalAGrafica(plnEjeX1.Points, duracion, tiempoInicial);
+            var ejeY = convertirSeñalAGrafica(plnEjeY1.Points, duracion, tiempoInicial);
+            plnEjeX1.Points = ejeX;
+            plnEjeY1.Points = ejeY;
+        }
+
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
+            {
+                txtAudio.Text = openFileDialog.FileName;
             }
         }
     }
